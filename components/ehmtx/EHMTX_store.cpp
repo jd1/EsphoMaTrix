@@ -11,13 +11,13 @@ namespace esphome
         this->active_slot = 0;
     }
 
-    EHMTX_screen *EHMTX_store::find_free_screen(uint8_t icon)
+    EHMTX_screen *EHMTX_store::find_free_screen(std::string id)
     {
-        ESP_LOGD(TAG, "findfreeslot for icon: %d", icon);
+        ESP_LOGD(TAG,"findfreeslot for id: %s", id.c_str());
         for (uint8_t i = 0; i < MAXQUEUE; i++)
         {
             EHMTX_screen *screen = this->slots[i];
-            if (screen->icon == icon)
+            if (screen->id == id)
             {
                 return screen;
             }
@@ -36,32 +36,29 @@ namespace esphome
         return this->slots[0];
     }
 
-    void EHMTX_store::delete_screen(uint8_t icon)
+    void EHMTX_store::delete_screen(std::string id)
     {
         for (uint8_t i = 0; i < MAXQUEUE; i++)
         {
-            this->slots[i]->del_slot(icon);
+            this->slots[i]->del_slot(id);
         }
     }
 
-    void EHMTX_store::force_next_screen(uint8_t icon_id)
+    void EHMTX_store::force_next_screen(std::string id)
     {
-        if (icon_id < MAXICONS)
-        {
-            this->force_screen = icon_id;
-        }
+        this->force_screen = id;
     }
 
     bool EHMTX_store::move_next()
     {
-        if (this->force_screen < MAXICONS)
+        if (this->force_screen != "")
         {
             for (uint8_t slot = 0; slot < MAXQUEUE; slot++)
             {
                 EHMTX_screen *screen = this->slots[slot];
-                if (screen->active() && screen->icon == this->force_screen)
+                if (screen->active() && screen->id == this->force_screen)
                 {
-                    this->force_screen = MAXICONS;
+                    this->force_screen = "";
                     this->active_slot = slot;
                     return true;
                 }
@@ -138,7 +135,7 @@ namespace esphome
             {
                 EHMTX_screen *screen = this->slots[i];
                 int td = screen->endtime - ts;
-                ESP_LOGI(TAG, "status slot %d icon %d text: %s alarm: %d end: %d sec", i, screen->icon, screen->text.c_str(), screen->alarm, td);
+                ESP_LOGI(TAG, "status slot %d id %s icon %d text: %s alarm: %d end: %d sec", i, screen->id.c_str(), screen->icon, screen->text.c_str(), screen->alarm, td);
             }
         }
     }

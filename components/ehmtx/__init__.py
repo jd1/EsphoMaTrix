@@ -45,6 +45,7 @@ CONF_PINGPONG = "pingpong"
 CONF_SELECT = "ehmtxselect"
 CONF_ON_NEXT_SCREEN = "on_next_screen"
 CONF_WEEK_ON_MONDAY = "week_start_monday"
+CONF_SCREEN = "screen_id"
 CONF_ICON = "icon_name"
 CONF_TEXT = "text"
 CONF_ALARM = "alarm"
@@ -117,6 +118,7 @@ CONFIG_SCHEMA = cv.All(font.validate_pillow_installed, EHMTX_SCHEMA)
 ADD_SCREEN_ACTION_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.use_id(EHMTX_),
+        cv.Required(CONF_SCREEN): cv.templatable(cv.string),
         cv.Required(CONF_ICON): cv.templatable(cv.string),
         cv.Required(CONF_TEXT): cv.templatable(cv.string),
         cv.Optional(CONF_DURATION): cv.templatable(cv.positive_int),
@@ -132,7 +134,10 @@ AddScreenAction = ehmtx_ns.class_("AddScreenAction", automation.Action)
 async def ehmtx_add_screen_action_to_code(config, action_id, template_arg, args):
     paren = await cg.get_variable(config[CONF_ID])
     var = cg.new_Pvariable(action_id, template_arg, paren)
-    
+
+    template_ = await cg.templatable(config[CONF_SCREEN], args, cg.std_string)
+    cg.add(var.set_screen_id(template_)) 
+
     template_ = await cg.templatable(config[CONF_ICON], args, cg.std_string)
     cg.add(var.set_icon(template_))
 

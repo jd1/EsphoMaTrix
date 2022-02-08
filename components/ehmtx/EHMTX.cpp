@@ -22,13 +22,18 @@ namespace esphome
 #endif
   }
 
+  void EHMTX::force_screen_id(std::string id) {
+    this->store->force_next_screen(id);
+    ESP_LOGD("EHMTX", "Force next screen: %s", id.c_str());
+  }
+
   void EHMTX::force_screen(std::string name)
   {
     uint8_t icon_id = this->find_icon(name);
     if (icon_id < MAXICONS)
     {
-      this->store->force_next_screen(icon_id);
-      ESP_LOGD(TAG, "force next screen: %s", name.c_str());
+      this->store->force_next_screen(to_string(icon_id));
+      ESP_LOGD("EHMTX", "Force next screen: %s", name.c_str());
     }
   }
 
@@ -170,7 +175,7 @@ namespace esphome
         {
           int x, y, w, h;
           this->display->get_text_bounds(0, 0, this->icons[i]->name.c_str(), this->font, display::TextAlign::LEFT, &x, &y, &w, &h);
-          this->icon_screen->set_text(this->icons[i]->name, i, w, 1);
+          this->icon_screen->set_text("icon_screen", this->icons[i]->name, i, w, 1);
           ESP_LOGD(TAG, "show all icons icon: %d name: %s", i, this->icons[i]->name.c_str());
         }
         else
@@ -266,29 +271,39 @@ namespace esphome
   void EHMTX::del_screen(std::string iname)
   {
     uint8_t icon = this->find_icon(iname.c_str());
-    this->store->delete_screen(icon);
+    this->del_screen_id(to_string(icon));
+  }
+
+  void EHMTX::del_screen_id(std::string id) {
+    this->store->delete_screen(id);
   }
 
   void EHMTX::add_screen(std::string iconname, std::string text, uint16_t duration, bool alarm)
   {
     uint8_t icon = this->find_icon(iconname.c_str());
-    this->internal_add_screen(icon, text, duration, alarm);
+    this->internal_add_screen(to_string(icon), icon, text, duration, alarm);
     ESP_LOGD(TAG, "add_screen icon: %d iconname: %s text: %s duration: %d alarm: %d", icon, iconname.c_str(), text.c_str(), duration, alarm);
   }
 
-  void EHMTX::internal_add_screen(uint8_t icon, std::string text, uint16_t duration, bool alarm = false)
+  void EHMTX::add_screen_id(std::string id, std::string icon_name, std::string text, uint16_t duration, bool alarm) {
+    uint8_t icon = this->find_icon(icon_name.c_str());
+    this->internal_add_screen(id, icon, text, duration, alarm);
+    ESP_LOGD(TAG, "add_screen_id id: %s icon: %d iconname: %s text: %s duration: %d alarm: %d", id.c_str(), icon, icon_name.c_str(), text.c_str(), duration, alarm);
+  }
+
+  void EHMTX::internal_add_screen(std::string id, uint8_t icon, std::string text, uint16_t duration, bool alarm)
   {
     if (icon >= this->icon_count)
     {
       ESP_LOGD(TAG, "icon %d not found => default: 0", icon);
       icon = 0;
     }
-    EHMTX_screen *screen = this->store->find_free_screen(icon);
+    EHMTX_screen *screen = this->store->find_free_screen(id);
 
     int x, y, w, h;
     this->display->get_text_bounds(0, 0, text.c_str(), this->font, display::TextAlign::LEFT, &x, &y, &w, &h);
     screen->alarm = alarm;
-    screen->set_text(text, icon, w, duration);
+    screen->set_text(id, text, icon, w, duration);
   }
 
   void EHMTX::set_default_brightness(uint8_t b)
@@ -402,7 +417,7 @@ namespace esphome
     int x, y, w, h;
     ESP_LOGD(TAG, "show all icons icon: %s", this->icons[0]->name.c_str());
     this->display->get_text_bounds(0, 0, this->icons[0]->name.c_str(), this->font, display::TextAlign::LEFT, &x, &y, &w, &h);
-    this->icon_screen->set_text(this->icons[0]->name, 0, w, 1);
+    this->icon_screen->set_text("icon_screen", this->icons[0]->name, 0, w, 1);
     this->show_icons = true;
   }
 

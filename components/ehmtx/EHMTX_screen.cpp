@@ -12,13 +12,15 @@ namespace esphome
 
   bool EHMTX_screen::is_alarm() { return this->alarm; }
 
-  bool EHMTX_screen::del_slot(uint8_t _icon)
+  bool EHMTX_screen::del_slot(std::string _id)
   {
-    if (this->icon == _icon)
+    if (this->id == _id)
     {
       this->endtime = 0;
       this->icon = 0;
-      ESP_LOGD(TAG, "delete screen icon: %d", _icon);
+      this->id = "";
+      
+      ESP_LOGD(TAG, "delete screen id: %s", _id.c_str());
       return true;
     }
     return false;
@@ -109,8 +111,9 @@ namespace esphome
     this->update_screen();
   }
 
-  void EHMTX_screen::set_text(std::string text, uint8_t icon, uint8_t pixel, uint16_t et)
+  void EHMTX_screen::set_text(std::string id, std::string text, uint8_t icon, uint8_t pixel, uint16_t et)
   {
+    this->id = id;
     this->text = text;
     this->pixels_ = pixel;
     this->shiftx_ = 0;

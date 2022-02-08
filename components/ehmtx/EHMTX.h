@@ -31,7 +31,7 @@ namespace esphome
     Color weekday_color;
     EHMTX_store *store;
     std::vector<EHMTXNextScreenTrigger *> on_next_screen_triggers_;
-    void internal_add_screen(uint8_t icon, std::string text, uint16_t duration, bool alarm);
+    void internal_add_screen(std::string id, uint8_t icon, std::string text, uint16_t duration, bool alarm);
 
   public:
     EHMTX();
@@ -43,6 +43,7 @@ namespace esphome
     uint8_t gauge_value;
     bool show_icons;
     void force_screen(std::string name);
+    void force_screen_id(std::string id);
     EHMTX_Icon *icons[MAXICONS];
     EHMTX_screen *icon_screen;
     void add_icon(EHMTX_Icon *icon);
@@ -51,6 +52,7 @@ namespace esphome
     esphome::EhmtxSelect *select;
     void set_select(esphome::EhmtxSelect *es);
 #endif
+
     addressable_light::AddressableLightDisplay *display;
     time::RealTimeClock *clock;
     display::Font *font;
@@ -82,7 +84,9 @@ namespace esphome
     void set_brightness(uint8_t b);
     uint8_t get_brightness();
     void add_screen(std::string icon, std::string text, uint16_t duration, bool alarm);
+    void add_screen_id(std::string id, std::string icon, std::string text, uint16_t duration, bool alarm);
     void del_screen(std::string iname);
+    void del_screen_id(std::string id);
     void set_clock(time::RealTimeClock *clock);
     void set_font(display::Font *font);
     void set_anim_intervall(uint16_t intervall);
@@ -111,15 +115,15 @@ namespace esphome
   protected:
     EHMTX_screen *slots[MAXQUEUE];
     uint8_t active_slot;
-    uint8_t force_screen;
+    std::string force_screen;
     uint8_t count_active_screens();
 
   public:
     EHMTX_store(EHMTX *config);
-    void force_next_screen(uint8_t icon_id);
+    void force_next_screen(std::string id);
     time::RealTimeClock *clock;
-    EHMTX_screen *find_free_screen(uint8_t icon);
-    void delete_screen(uint8_t icon);
+    EHMTX_screen *find_free_screen(std::string id);
+    void delete_screen(std::string id);
     bool move_next();
     EHMTX_screen *current();
     void log_status();
@@ -139,6 +143,7 @@ namespace esphome
     time_t endtime;
     uint8_t icon;
     std::string text;
+    std::string id;
 
     EHMTX_screen(EHMTX *config);
 
@@ -149,8 +154,8 @@ namespace esphome
     bool isfree();
     bool update_slot(uint8_t _icon);
     void update_screen();
-    bool del_slot(uint8_t _icon);
-    void set_text(std::string text, uint8_t icon, uint8_t pixel, uint16_t et);
+    bool del_slot(std::string id);
+    void set_text(std::string id, std::string text, uint8_t icon, uint8_t pixel, uint16_t et);
   };
 
   class EHMTXNextScreenTrigger : public Trigger<std::string, std::string>
@@ -165,6 +170,7 @@ namespace esphome
   {
   public:
     AddScreenAction(EHMTX *parent) : parent_(parent) {}
+    TEMPLATABLE_VALUE(std::string, screen_id)
     TEMPLATABLE_VALUE(std::string, icon)
     TEMPLATABLE_VALUE(std::string, text)
     TEMPLATABLE_VALUE(uint8_t, duration)
@@ -172,16 +178,17 @@ namespace esphome
 
     void play(Ts... x) override
     {
+      auto screen_id = this->screen_id_.value(x...);
       auto icon = this->icon_.value(x...);
       auto text = this->text_.value(x...);
       auto duration = this->duration_.value(x...);
       auto alarm = this->alarm_.value(x...);
 
       if(duration) {
-        this->parent_->add_screen(icon, text, duration, alarm);
+        this->parent_->add_screen_id(screen_id, icon, text, duration, alarm);  
       } else {
-        this->parent_->add_screen(icon, text, this->parent_->duration, alarm);
-      }
+        this->parent_->add_screen_id(screen_id, icon, text, this->parent_->duration, alarm);
+      }      
     }
 
   protected:
@@ -326,7 +333,7 @@ template <typename... Ts>
 
     void play(Ts... x) override
     {
-      this->parent_->del_screen(this->icon_.value(x...));
+      this->parent_->del_screen_id(this->icon_.value(x...));
     }
 
   protected:
@@ -342,7 +349,7 @@ template <typename... Ts>
 
     void play(Ts... x) override
     {
-      this->parent_->force_screen(this->icon_.value(x...));
+      this->parent_->force_screen_id(this->icon_.value(x...));
     }
 
   protected:
