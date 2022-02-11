@@ -88,6 +88,7 @@ namespace esphome
       EHMTX_screen *slots[MAXQUEUE];
       uint8_t active_slot;
       uint8_t count_active_screens();
+      std::optional<uint8_t> find_slot_of_active_screens(uint8_t start, uint8_t end);
     public:
       EHMTX_store(EHMTX *config);
       time::RealTimeClock *clock;

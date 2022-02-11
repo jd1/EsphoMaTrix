@@ -44,46 +44,47 @@ namespace esphome
         }
     }
 
+    std::optional<uint8_t> find_slot_of_active_screens(uint8_t start, uint8_t end)
+    {
+        for (uint8_t slot = start; slot < end; slot++)
+        {
+            EHMTX_screen* screen = this->slots[slot];
+            if (screen->active())
+            {
+                return slot;
+            }
+        }
+        return {}; 
+    }
+
     bool EHMTX_store::move_next()
     {
         if (this->count_active_screens()== 1)
         {
             //Find first and only active screen
-            for (uint8_t slot = 0; slot < MAXQUEUE; slot++)
-            {
-                EHMTX_screen* screen = this->slots[slot];
-                if (screen->active())
-                {
-                    this->active_slot = slot;
-                    return true;
-                }
-            }  
+            std::optional slot = this->find_slot_of_active_screens(0, MAXQUEUE);
+            if(slot) {
+                this->active_slot = slot;
+                return true;
+            }
         }
 
         //Find active screen between active slot and end of array
-        for (uint8_t slot = (this->active_slot + 1); slot < MAXQUEUE; slot++)
-        {
-            EHMTX_screen* screen = this->slots[slot];
-            if (screen->active())
-            {
-                this->active_slot = slot;
-                return true;
-            }
+        std::optional slot = this->find_slot_of_active_screens(this->active_slot + 1, MAXQUEUE);
+        if(slot) {
+            this->active_slot = slot;
+            return true;
         }
-
+        
         //Find active screen between 0 and active slot
-        for (uint8_t slot = 0; slot < this->active_slot; slot++)
-        {
-            EHMTX_screen* screen = this->slots[slot];
-            if (screen->active())
-            {
-                this->active_slot = slot;
-                return true;
-            }
+        std::optional slot = this->find_slot_of_active_screens(0, this->active_slot);
+        if(slot) {
+            this->active_slot = slot;
+            return true;
         }
 
         //No active screen found
-        this->active_slot = 0;
+        this->active_slot = nullptr;
         return false;
     }
 
