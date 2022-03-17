@@ -78,7 +78,7 @@ namespace esphome
         return i;
       }
     }
-    ESP_LOGD(TAG, "icon: %s not found", name.c_str());
+    ESP_LOGW(TAG, "icon: %s not found", name.c_str());
     return MAXICONS;
   }
 
